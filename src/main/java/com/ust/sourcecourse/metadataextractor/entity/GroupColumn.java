@@ -2,156 +2,56 @@ package com.ust.sourcecourse.metadataextractor.entity;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
+
+@Entity
+@Data
+@Table(name = "GroupColumn")
 public class GroupColumn {
 
+	@Id
+	@Column(name = "uid")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private String uid;
+	@ManyToOne
+	@JoinColumn(name = "group_uid", nullable = false)
 	private String groupUid;
+	@Column(name = "name")
 	private String name;
+	@Column(name = "notes")
 	private String notes;
+	@Column(name = "type")
 	private String type;
+	@Column(name = "isPrimary")
 	private boolean isPrimary;
+	@Column(name = "uniqueKey")
 	private String uniqueKey;
+	@Column(name = "nullable")
 	private boolean isNullable;
+	@Column(name = "defaultValue")
 	private String defaultValue;
+	@Column(name = "prefix")
 	private String prefix;
+	@Column(name = "suffix")
 	private String suffix;
+	@ManyToOne
+	@JoinColumn(name = "source_column_uid", nullable = false)
 	private String sourceColumnUid;
+	@Column(name = "createdBy")
 	private String createdBy;
+	@Column(name = "created_timestamp")
 	private LocalDateTime createdTimestamp;
+	@Column(name = "modifiedBy")
 	private String modifiedBy;
+	@Column(name = "modified_timestamp")
 	private LocalDateTime modifiedTimestamp;
-
-	public GroupColumn() {
-		super();
-		// TODO Auto-generated constructor stub
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	public String getGroupUid() {
-		return groupUid;
-	}
-
-	public void setGroupUid(String groupUid) {
-		this.groupUid = groupUid;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getNotes() {
-		return notes;
-	}
-
-	public void setNotes(String notes) {
-		this.notes = notes;
-	}
-
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public boolean isPrimary() {
-		return isPrimary;
-	}
-
-	public void setPrimary(boolean isPrimary) {
-		this.isPrimary = isPrimary;
-	}
-
-	public String getUniqueKey() {
-		return uniqueKey;
-	}
-
-	public void setUniqueKey(String uniqueKey) {
-		this.uniqueKey = uniqueKey;
-	}
-
-	public boolean isNullable() {
-		return isNullable;
-	}
-
-	public void setNullable(boolean isNullable) {
-		this.isNullable = isNullable;
-	}
-
-	public String getDefaultValue() {
-		return defaultValue;
-	}
-
-	public void setDefaultValue(String defaultValue) {
-		this.defaultValue = defaultValue;
-	}
-
-	public String getPrefix() {
-		return prefix;
-	}
-
-	public void setPrefix(String prefix) {
-		this.prefix = prefix;
-	}
-
-	public String getSuffix() {
-		return suffix;
-	}
-
-	public void setSuffix(String suffix) {
-		this.suffix = suffix;
-	}
-
-	public String getSourceColumnUid() {
-		return sourceColumnUid;
-	}
-
-	public void setSourceColumnUid(String sourceColumnUid) {
-		this.sourceColumnUid = sourceColumnUid;
-	}
-
-	public String getCreatedBy() {
-		return createdBy;
-	}
-
-	public void setCreatedBy(String createdBy) {
-		this.createdBy = createdBy;
-	}
-
-	public LocalDateTime getCreatedTimestamp() {
-		return createdTimestamp;
-	}
-
-	public void setCreatedTimestamp(LocalDateTime createdTimestamp) {
-		this.createdTimestamp = createdTimestamp;
-	}
-
-	public String getModifiedBy() {
-		return modifiedBy;
-	}
-
-	public void setModifiedBy(String modifiedBy) {
-		this.modifiedBy = modifiedBy;
-	}
-
-	public LocalDateTime getModifiedTimestamp() {
-		return modifiedTimestamp;
-	}
-
-	public void setModifiedTimestamp(LocalDateTime modifiedTimestamp) {
-		this.modifiedTimestamp = modifiedTimestamp;
-	}
 
 }

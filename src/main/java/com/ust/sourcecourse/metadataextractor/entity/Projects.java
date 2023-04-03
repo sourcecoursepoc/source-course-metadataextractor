@@ -2,27 +2,26 @@ package com.ust.sourcecourse.metadataextractor.entity;
 
 import java.sql.Date;
 
-import org.hibernate.annotations.Table;
+
 import org.springframework.data.annotation.Id;
-import org.springframework.data.jpa.repository.Temporal;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Table;
+import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-
-import lombok.Getter;
-import lombok.Setter;
 
 
 @Entity
-@Getter
-@Setter
-//@Table(name = "Projects")
-
+@Data
+@Table(name="Projects")
 public class Projects {
 	
 
 	    @Id
 	    @Column(name = "uid")
+	    @GeneratedValue(strategy = GenerationType.IDENTITY)
 	    private String uid;
 	    
 	    @Column(name = "name", nullable = false)

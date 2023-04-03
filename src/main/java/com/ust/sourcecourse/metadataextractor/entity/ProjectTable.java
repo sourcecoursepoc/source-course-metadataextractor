@@ -2,70 +2,33 @@ package com.ust.sourcecourse.metadataextractor.entity;
 
 import java.sql.Date;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
+import lombok.Data;
+@Entity
+@Data
+@Table(name="ProjectTable")
 public class ProjectTable {
-
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private String uid;
+	@ManyToMany
 	private Projects project;
+	@Column(name="table")
 	private SourceTable table;
+	@Column(name="createdBy")
 	private String createdBy;
+	@Column(name="createdTimestamp")
 	private Date createdTimestamp;
+	@Column(name="modifiedBy")
 	private String modifiedBy;
+	@Column(name="modifiedTimestamp")
 	private Date modifiedTimestamp;
 
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	public Projects getProject() {
-		return project;
-	}
-
-	public void setProject(Projects project) {
-		this.project = project;
-	}
-
-	public SourceTable getTable() {
-		return table;
-	}
-
-	public void setTable(SourceTable table) {
-		this.table = table;
-	}
-
-	public String getCreatedBy() {
-		return createdBy;
-	}
-
-	public void setCreatedBy(String createdBy) {
-		this.createdBy = createdBy;
-	}
-
-	public Date getCreatedTimestamp() {
-		return createdTimestamp;
-	}
-
-	public void setCreatedTimestamp(Date createdTimestamp) {
-		this.createdTimestamp = createdTimestamp;
-	}
-
-	public String getModifiedBy() {
-		return modifiedBy;
-	}
-
-	public void setModifiedBy(String modifiedBy) {
-		this.modifiedBy = modifiedBy;
-	}
-
-	public Date getModifiedTimestamp() {
-		return modifiedTimestamp;
-	}
-
-	public void setModifiedTimestamp(Date modifiedTimestamp) {
-		this.modifiedTimestamp = modifiedTimestamp;
-	}
 
 }

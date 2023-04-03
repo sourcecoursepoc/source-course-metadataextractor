@@ -1,132 +1,51 @@
 package com.ust.sourcecourse.metadataextractor.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.Data;
+
+@Entity
+@Data
+@Table(name = "DataSources")
 public class DataSource {
-
+	@Id
+	@Column(name = "uid")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private String uid;
+	@Column(name = "name")
 	private String name;
-	private String description;
+	@Column(name="description")
+	private String description ;
+	@Column(name = "status")
 	private String status;
+	@Column(name = "region")
 	private String region;
+	@Column(name = "totalTables")
 	private int totalTables;
+	@Column(name = "size")
 	private long size;
+	@Column(name = "created_by")
 	private String createdBy;
+	@Column(name = "created_timestamp")
 	private LocalDateTime createdTimestamp;
+	@Column(name = "modified_by")
 	private String modifiedBy;
+	@Column(name = "modified_timestamp")
 	private LocalDateTime modifiedTimestamp;
+	@OneToMany(mappedBy = "dataSource", cascade = CascadeType.ALL)
 	private List<ConnectionInfo> connections;
+	@OneToMany(mappedBy = "dataSource", cascade = CascadeType.ALL)
 	private List<SourceTable> tables;
-
-		
-	
-	public DataSource() {
-		super();
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
-	public String getRegion() {
-		return region;
-	}
-
-	public void setRegion(String region) {
-		this.region = region;
-	}
-
-	public int getTotalTables() {
-		return totalTables;
-	}
-
-	public void setTotalTables(int totalTables) {
-		this.totalTables = totalTables;
-	}
-
-	public long getSize() {
-		return size;
-	}
-
-	public void setSize(long size) {
-		this.size = size;
-	}
-
-	public String getCreatedBy() {
-		return createdBy;
-	}
-
-	public void setCreatedBy(String createdBy) {
-		this.createdBy = createdBy;
-	}
-
-	public LocalDateTime getCreatedTimestamp() {
-		return createdTimestamp;
-	}
-
-	public void setCreatedTimestamp(LocalDateTime createdTimestamp) {
-		this.createdTimestamp = createdTimestamp;
-	}
-
-	public String getModifiedBy() {
-		return modifiedBy;
-	}
-
-	public void setModifiedBy(String modifiedBy) {
-		this.modifiedBy = modifiedBy;
-	}
-
-	public LocalDateTime getModifiedTimestamp() {
-		return modifiedTimestamp;
-	}
-
-	public void setModifiedTimestamp(LocalDateTime modifiedTimestamp) {
-		this.modifiedTimestamp = modifiedTimestamp;
-	}
-
-	public List<ConnectionInfo> getConnections() {
-		return connections;
-	}
-
-	public void setConnections(List<ConnectionInfo> connections) {
-		this.connections = connections;
-	}
-
-	public List<SourceTable> getTables() {
-		return tables;
-	}
-
-	public void setTables(List<SourceTable> tables) {
-		this.tables = tables;
-	}
 
 }

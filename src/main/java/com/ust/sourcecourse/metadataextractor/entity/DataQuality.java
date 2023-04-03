@@ -1,86 +1,49 @@
 package com.ust.sourcecourse.metadataextractor.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
+
+@Entity
+@Data
+@Table(name = "DataQuality")
 public class DataQuality {
+	@Id
+	@Column(name = "uid")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private String uid;
+	@ManyToOne
+	@JoinColumn(name = "column_uid")
 	private String columnUid;
+	@Column(name = "score")
 	private float score;
-	private String description;
+	@Column(name="description")
+	private String description ;
+	@CreatedBy
+	@Column(name = "createdBy")
 	private String createdBy;
+	@CreatedDate
+	@Column(name = "created_timestamp")
 	private LocalDateTime createdTimestamp;
+	@LastModifiedBy
+	@Column(name = "modifiedBy")
 	private String modifiedBy;
+	@Column(name = "modifiedTimestamp")
 	private LocalDateTime modifiedTimestamp;
-	
-	
-
-	public DataQuality() {
-		super();
-		// TODO Auto-generated constructor stub
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	public String getColumnUid() {
-		return columnUid;
-	}
-
-	public void setColumnUid(String columnUid) {
-		this.columnUid = columnUid;
-	}
-
-	public float getScore() {
-		return score;
-	}
-
-	public void setScore(float score) {
-		this.score = score;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public String getCreatedBy() {
-		return createdBy;
-	}
-
-	public void setCreatedBy(String createdBy) {
-		this.createdBy = createdBy;
-	}
-
-	public LocalDateTime getCreatedTimestamp() {
-		return createdTimestamp;
-	}
-
-	public void setCreatedTimestamp(LocalDateTime createdTimestamp) {
-		this.createdTimestamp = createdTimestamp;
-	}
-
-	public String getModifiedBy() {
-		return modifiedBy;
-	}
-
-	public void setModifiedBy(String modifiedBy) {
-		this.modifiedBy = modifiedBy;
-	}
-
-	public LocalDateTime getModifiedTimestamp() {
-		return modifiedTimestamp;
-	}
-
-	public void setModifiedTimestamp(LocalDateTime modifiedTimestamp) {
-		this.modifiedTimestamp = modifiedTimestamp;
-	}
 
 }

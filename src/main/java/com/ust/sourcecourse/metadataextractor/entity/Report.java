@@ -2,72 +2,39 @@ package com.ust.sourcecourse.metadataextractor.entity;
 
 import java.sql.Date;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
+
+@Entity
+@Data
+@Table(name = "Report")
 public class Report {
 
+	@Id
+	@Column(name = "uid")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private String uid;
+	@ManyToOne
+	@JoinColumn(name = "consumption_uid", referencedColumnName = "uid")
+	private String consumptionUid;
+	@ManyToOne
+	@JoinColumn(name = "dataQuality_uid", referencedColumnName = "uid")
+	private String dataQualityUid;
+	@Column(name = "createdBy")
 
-	    private String uid;
-	    private String consumptionUid;
-	    private String dataQualityUid;
-	    private String createdBy;
-	    private Date createdTimestamp;
-	    private String modifiedBy;
-	    private Date modifiedTimestamp;
-
-	    public String getUid() {
-	        return uid;
-	    }
-
-	    public void setUid(String uid) {
-	        this.uid = uid;
-	    }
-
-	    public String getConsumptionUid() {
-	        return consumptionUid;
-	    }
-
-	    public void setConsumptionUid(String consumptionUid) {
-	        this.consumptionUid = consumptionUid;
-	    }
-
-	    public String getDataQualityUid() {
-	        return dataQualityUid;
-	    }
-
-	    public void setDataQualityUid(String dataQualityUid) {
-	        this.dataQualityUid = dataQualityUid;
-	    }
-
-	    public String getCreatedBy() {
-	        return createdBy;
-	    }
-
-	    public void setCreatedBy(String createdBy) {
-	        this.createdBy = createdBy;
-	    }
-
-	    public Date getCreatedTimestamp() {
-	        return createdTimestamp;
-	    }
-
-	    public void setCreatedTimestamp(Date createdTimestamp) {
-	        this.createdTimestamp = createdTimestamp;
-	    }
-
-	    public String getModifiedBy() {
-	        return modifiedBy;
-	    }
-
-	    public void setModifiedBy(String modifiedBy) {
-	        this.modifiedBy = modifiedBy;
-	    }
-
-	    public Date getModifiedTimestamp() {
-	        return modifiedTimestamp;
-	    }
-
-	    public void setModifiedTimestamp(Date modifiedTimestamp) {
-	        this.modifiedTimestamp = modifiedTimestamp;
-	    }
-	
+	private String createdBy;
+	@Column(name = "created_timestamp")
+	private Date createdTimestamp;
+	@Column(name = "modifiedBy")
+	private String modifiedBy;
+	@Column(name = "modified_timestamp")
+	private Date modifiedTimestamp;
 
 }
