@@ -1,6 +1,11 @@
 package com.ust.sourcecourse.metadataextractor.entity;
 
-import java.sql.Date;
+import java.time.LocalDateTime;
+
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,33 +13,42 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "Report")
+@Table(name = "report")
 public class Report {
 
 	@Id
 	@Column(name = "uid")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private String uid;
-	@ManyToOne
-	@JoinColumn(name = "consumption_uid", referencedColumnName = "uid")
-	private String consumptionUid;
-	@ManyToOne
-	@JoinColumn(name = "dataQuality_uid", referencedColumnName = "uid")
-	private String dataQualityUid;
-	@Column(name = "createdBy")
+	private Long uid;
 
+	@OneToOne
+	@JoinColumn(name = "source_column_uid", referencedColumnName = "uid")
+	private SourceColumn sourceColumn;
+
+	@OneToOne
+	@JoinColumn(name = "data_quality_uid", referencedColumnName = "uid")
+	private DataQuality dataQuality;
+
+	@Column(name = "created_by")
+	@CreatedBy
 	private String createdBy;
+
 	@Column(name = "created_timestamp")
-	private Date createdTimestamp;
-	@Column(name = "modifiedBy")
+	@CreatedDate
+	private LocalDateTime createdTimestamp;
+
+	@Column(name = "modified_by")
+	@LastModifiedBy
 	private String modifiedBy;
+
 	@Column(name = "modified_timestamp")
-	private Date modifiedTimestamp;
+	@LastModifiedDate
+	private LocalDateTime modifiedTimestamp;
 
 }

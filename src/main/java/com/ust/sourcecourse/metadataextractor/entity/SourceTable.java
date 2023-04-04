@@ -5,6 +5,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -13,52 +18,71 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "Source_Tables")
+@Table(name = "source_table")
 public class SourceTable {
 
 	@Id
-	@Column(name = "uid", nullable = false)
+	@Column(name = "uid")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private String uid;
+	private Long uid;
+
 	@Column(name = "name", nullable = false)
 	private String name;
+
 	@Column(name = "description", columnDefinition = "TEXT")
 	private String description;
-	@ManyToOne
-	@JoinColumn(name = "datasource_uid")
-	private String datasourceUid;
-	@Column(name = "rowCount")
-	private long rowCount;
-	@Column(name = "size")
-	private long size;
-	@Column(name = "minDate")
-	private LocalDate minDate;
-	@Column(name = "maxDate")
-	private LocalDate maxDate;
-	@Column(name = "yoyCount")
-	private long yoyCount;
-	@Column(name = "momCount")
-	private long momCount;
-	@ElementCollection
-	private List<String> tags= new ArrayList<>();
+
 	@ManyToOne
 	@JoinColumn(name = "datasource_uid", referencedColumnName = "uid")
 	private DataSource dataSource;
-	@ManyToOne
-	@JoinColumn(name = "sourcecolumn_uid", referencedColumnName = "uid")
-	private List<SourceColumn> columns;
-	@Column(name="createdBy")
+
+	@Column(name = "rowCount")
+	private long rowCount;
+
+	@Column(name = "size")
+	private long size;
+
+	@Column(name = "minDate")
+	private LocalDate minDate;
+
+	@Column(name = "maxDate")
+	private LocalDate maxDate;
+
+	@Column(name = "yoyCount")
+	private long yoyCount;
+
+	@Column(name = "momCount")
+	private long momCount;
+
+	@ElementCollection
+	private List<String> tags = new ArrayList<>();
+
+	@Column(name = "created_by")
+	@CreatedBy
 	private String createdBy;
-	@Column(name = "created_timestamp", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+
+	@Column(name = "created_timestamp")
+	@CreatedDate
 	private LocalDateTime createdTimestamp;
-	@Column(name = "modifiedBy", length = 255)
+
+	@Column(name = "modified_by")
+	@LastModifiedBy
 	private String modifiedBy;
-	@Column(name = "modified_timestamp", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+
+	@Column(name = "modified_timestamp")
+	@LastModifiedDate
 	private LocalDateTime modifiedTimestamp;
+
+	@OneToMany(mappedBy = "sourceTable")
+	private List<SourceColumn> sourceColumns;
+	
+	@OneToMany(mappedBy = "sourceTable")
+	private List<ProjectTable> projectTables;
 
 }
