@@ -8,21 +8,27 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
-@Data
 @Table(name = "data_source")
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class DataSource {
 
 	@Id
@@ -46,7 +52,7 @@ public class DataSource {
 	private Integer totalTables;
 
 	@Column(name = "size")
-	private Long size;
+	private String size;
 
 	@Column(name = "created_by")
 	@CreatedBy
@@ -64,10 +70,10 @@ public class DataSource {
 	@UpdateTimestamp
 	private LocalDateTime modifiedTimestamp;
 
-	@OneToOne(mappedBy = "dataSource")
+	@OneToOne(mappedBy = "dataSource", cascade = CascadeType.ALL)
 	private ConnectionInfo connectionInfo;
 
-	@OneToMany(mappedBy = "dataSource")
+	@OneToMany(mappedBy = "dataSource", cascade = CascadeType.ALL)
 	private List<SourceTable> sourceTables;
 
 }

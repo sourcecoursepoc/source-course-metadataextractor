@@ -1,7 +1,6 @@
 package com.ust.sourcecourse.metadataextractor.entity;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,13 +19,17 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
-@Data
 @Table(name = "source_column")
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SourceColumn {
 
 	@Id
@@ -60,7 +63,7 @@ public class SourceColumn {
 	private String defaultValue;
 
 	@ElementCollection
-	private List<String> tags = new ArrayList<>();
+	private List<String> tags;
 
 	@Column(name = "created_by")
 	@CreatedBy
