@@ -4,10 +4,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -28,7 +28,7 @@ import lombok.Data;
 @Table(name = "source_column")
 @Builder
 public class SourceColumn {
-	
+
 	@Id
 	@Column(name = "uid")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -67,7 +67,7 @@ public class SourceColumn {
 	private String createdBy;
 
 	@Column(name = "created_timestamp")
-	@CreatedDate
+	@CreationTimestamp
 	private LocalDateTime createdTimestamp;
 
 	@Column(name = "modified_by")
@@ -75,12 +75,12 @@ public class SourceColumn {
 	private String modifiedBy;
 
 	@Column(name = "modified_timestamp")
-	@LastModifiedDate
+	@UpdateTimestamp
 	private LocalDateTime modifiedTimestamp;
-	
+
 	@OneToOne(mappedBy = "sourceColumn")
 	private Report report;
-	
+
 	@OneToMany(mappedBy = "sourceColumn")
 	private List<GroupColumn> groupColumns;
 }

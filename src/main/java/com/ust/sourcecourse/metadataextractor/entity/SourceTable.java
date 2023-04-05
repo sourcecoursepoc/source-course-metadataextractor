@@ -5,10 +5,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -70,7 +70,7 @@ public class SourceTable {
 	private String createdBy;
 
 	@Column(name = "created_timestamp")
-	@CreatedDate
+	@CreationTimestamp
 	private LocalDateTime createdTimestamp;
 
 	@Column(name = "modified_by")
@@ -78,12 +78,12 @@ public class SourceTable {
 	private String modifiedBy;
 
 	@Column(name = "modified_timestamp")
-	@LastModifiedDate
+	@UpdateTimestamp
 	private LocalDateTime modifiedTimestamp;
 
 	@OneToMany(mappedBy = "sourceTable")
 	private List<SourceColumn> sourceColumns;
-	
+
 	@OneToMany(mappedBy = "sourceTable")
 	private List<ProjectTable> projectTables;
 
