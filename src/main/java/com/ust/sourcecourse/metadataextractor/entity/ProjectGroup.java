@@ -1,7 +1,6 @@
 package com.ust.sourcecourse.metadataextractor.entity;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -9,6 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -20,13 +20,17 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
-@Data
 @Table(name = "project_group")
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProjectGroup {
 
 	@Id
@@ -45,7 +49,7 @@ public class ProjectGroup {
 	private Project project;
 
 	@ElementCollection
-	private List<String> tags = new ArrayList<>();
+	private List<String> tags;
 
 	@Column(name = "created_by")
 	@CreatedBy
@@ -63,9 +67,9 @@ public class ProjectGroup {
 	@UpdateTimestamp
 	private LocalDateTime modifiedTimestamp;
 
-	@OneToOne(mappedBy = "projectGroup")
+	@OneToOne(mappedBy = "projectGroup", cascade = CascadeType.ALL)
 	private GroupPipeline groupPipeline;
 
-	@OneToMany(mappedBy = "projectGroup")
+	@OneToMany(mappedBy = "projectGroup", cascade = CascadeType.ALL)
 	private List<GroupColumn> groupColumns;
 }

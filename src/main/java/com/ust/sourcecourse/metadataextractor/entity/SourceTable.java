@@ -2,7 +2,6 @@ package com.ust.sourcecourse.metadataextractor.entity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -10,6 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -20,13 +20,17 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
-@Data
 @Table(name = "source_table")
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SourceTable {
 
 	@Id
@@ -45,10 +49,10 @@ public class SourceTable {
 	private DataSource dataSource;
 
 	@Column(name = "rowCount")
-	private long rowCount;
+	private Long rowCount;
 
 	@Column(name = "size")
-	private long size;
+	private String size;
 
 	@Column(name = "minDate")
 	private LocalDate minDate;
@@ -57,13 +61,13 @@ public class SourceTable {
 	private LocalDate maxDate;
 
 	@Column(name = "yoyCount")
-	private long yoyCount;
+	private Long yoyCount;
 
 	@Column(name = "momCount")
-	private long momCount;
+	private Long momCount;
 
 	@ElementCollection
-	private List<String> tags = new ArrayList<>();
+	private List<String> tags;
 
 	@Column(name = "created_by")
 	@CreatedBy
@@ -81,7 +85,7 @@ public class SourceTable {
 	@UpdateTimestamp
 	private LocalDateTime modifiedTimestamp;
 
-	@OneToMany(mappedBy = "sourceTable")
+	@OneToMany(mappedBy = "sourceTable", cascade = CascadeType.ALL)
 	private List<SourceColumn> sourceColumns;
 
 	@OneToMany(mappedBy = "sourceTable")
