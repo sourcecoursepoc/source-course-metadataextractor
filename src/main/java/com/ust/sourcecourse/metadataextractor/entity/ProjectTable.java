@@ -2,10 +2,10 @@ package com.ust.sourcecourse.metadataextractor.entity;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -42,7 +42,7 @@ public class ProjectTable {
 	private String createdBy;
 
 	@Column(name = "created_timestamp")
-	@CreatedDate
+	@CreationTimestamp
 	private LocalDateTime createdTimestamp;
 
 	@Column(name = "modified_by")
@@ -50,7 +50,7 @@ public class ProjectTable {
 	private String modifiedBy;
 
 	@Column(name = "modified_timestamp")
-	@LastModifiedDate
+	@UpdateTimestamp
 	private LocalDateTime modifiedTimestamp;
 
 }
