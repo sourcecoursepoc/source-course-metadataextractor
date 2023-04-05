@@ -15,11 +15,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.Builder;
 import lombok.Data;
 
 @Entity
 @Data
 @Table(name = "group_pipeline")
+@Builder
 public class GroupPipeline {
 
 	@Id

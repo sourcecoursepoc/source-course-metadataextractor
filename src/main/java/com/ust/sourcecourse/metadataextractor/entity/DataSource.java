@@ -16,11 +16,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.Builder;
 import lombok.Data;
 
 @Entity
 @Data
 @Table(name = "data_source")
+@Builder
 public class DataSource {
 
 	@Id
@@ -41,10 +43,10 @@ public class DataSource {
 	private String region;
 
 	@Column(name = "totalTables")
-	private int totalTables;
+	private Integer totalTables;
 
 	@Column(name = "size")
-	private long size;
+	private Long size;
 
 	@Column(name = "created_by")
 	@CreatedBy
