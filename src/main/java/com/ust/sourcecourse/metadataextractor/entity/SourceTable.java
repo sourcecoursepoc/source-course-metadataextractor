@@ -1,3 +1,4 @@
+
 package com.ust.sourcecourse.metadataextractor.entity;
 
 import java.time.LocalDate;

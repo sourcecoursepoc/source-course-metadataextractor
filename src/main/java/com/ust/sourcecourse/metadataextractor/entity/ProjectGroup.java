@@ -72,4 +72,5 @@ public class ProjectGroup {
 
 	@OneToMany(mappedBy = "projectGroup", cascade = CascadeType.ALL)
 	private List<GroupColumn> groupColumns;
+	
 }
