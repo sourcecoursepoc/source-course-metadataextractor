@@ -44,6 +44,19 @@ public class MetaDataService {
 			e.printStackTrace();
 		}
 	}
+	private void retrieveDataFromPostgreSQL(DataSource dataSource) {
+		try {
+			Class.forName("org.postgresql.Driver");
+			ConnectionInfo connectionInfo = dataSource.getConnectionInfo();
+			Connection connection = DriverManager.getConnection(connectionInfo.getConnectionURL(),
+					connectionInfo.getUsername(), connectionInfo.getPassword());
+			dataSource.setStatus("Active");
+			getTableMetadata(connection, dataSource);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 
 	private void getTableMetadata(Connection connection, DataSource dataSource) throws SQLException {
 		int totalTables = 0;
@@ -156,5 +169,6 @@ public class MetaDataService {
 		PreparedStatement statement = connection.prepareStatement(sql);
 		return statement.executeQuery();
 	}
+	
 
 }
