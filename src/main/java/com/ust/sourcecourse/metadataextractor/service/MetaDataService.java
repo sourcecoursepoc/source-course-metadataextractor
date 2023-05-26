@@ -11,6 +11,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ust.sourcecourse.metadataextractor.entity.ConnectionInfo;
 import com.ust.sourcecourse.metadataextractor.entity.DataSource;
@@ -23,7 +24,19 @@ public class MetaDataService {
 
 	@Autowired
 	private DataSourceRepository dataSourceRepository;
+	
+	@Transactional
+	public void getMetadata(Long uid) {
+		Optional<DataSource> dataSource=dataSourceRepository.findById(uid);
+		
+		DataSource dataSource2 = dataSource.get();
+		connectToDBAndGetData(dataSource2);
+		dataSourceRepository.save(dataSource2);
+		
+	}
+	
 
+	@Transactional
 	public void getMetadata() {
 		List<DataSource> dataSources = dataSourceRepository.findAll();
 		for (DataSource dataSource : dataSources) {
