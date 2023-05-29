@@ -17,7 +17,6 @@ import com.ust.sourcecourse.metadataextractor.entity.DataSource;
 import com.ust.sourcecourse.metadataextractor.entity.SourceColumn;
 import com.ust.sourcecourse.metadataextractor.entity.SourceTable;
 import com.ust.sourcecourse.metadataextractor.repository.DataSourceRepository;
-
 @Service
 public class MetaDataService {
 
@@ -114,15 +113,15 @@ public class MetaDataService {
 			boolean isUnique = false;
 
 			switch (colKey) {
-			case "PRI": {
-				isPrimary = true;
-				isUnique = true;
-				break;
-			}
-			case "UNI": {
-				isUnique = true;
-				break;
-			}
+				case "PRI": {
+					isPrimary = true;
+					isUnique = true;
+					break;
+				}
+				case "UNI": {
+					isUnique = true;
+					break;
+				}
 			}
 			Optional<SourceColumn> sourceClmn = sourceColumns.stream()
 					.filter(sc -> sc.getName().equalsIgnoreCase(colName)).findFirst();
@@ -144,6 +143,43 @@ public class MetaDataService {
 		sourceTable.setSourceColumns(sourceColumns);
 	}
 
+	public void getSelectedRows(DataSource dataSource, SourceTable sourceTable) {
+		String sql = "SELECT * FROM " + sourceTable.getName() + " LIMIT 10";
+		try {
+			ConnectionInfo connectionInfo = dataSource.getConnectionInfo();
+			Connection connection = DriverManager.getConnection(connectionInfo.getConnectionURL(),
+					connectionInfo.getUsername(), connectionInfo.getPassword());
+			ResultSet tableRS = getResultSet(connection, sql);
+			List<SourceTable> sourceTables = dataSource.getSourceTables();
+			if (sourceTables == null) {
+				sourceTables = new ArrayList<>();
+			}
+
+			Double dbSize = 0D;
+			while (tableRS.next()) {
+				String tableName = tableRS.getString("TABLE_NAME");
+
+				Optional<SourceTable> sourceTble = sourceTables.stream()
+						.filter(st -> st.getName().equalsIgnoreCase(tableName)).findFirst();
+
+				Long rowCount = tableRS.getLong("TABLE_ROWS");
+				Double dataLength = tableRS.getDouble("DATA_LENGTH");
+				Double indexLength = tableRS.getDouble("INDEX_LENGTH");
+				Double tblSize = getSize(dataLength, indexLength);
+				String tbleSizeInMB = getSizeText(tblSize);
+				dbSize += tblSize;
+				SourceTable selectedSourceTable = getSourceTable(dataSource, sourceTables, tableName, sourceTble,
+						rowCount, tbleSizeInMB);
+				getColumnMetadata(connection, dataSource, selectedSourceTable);
+			}
+			dataSource.setTotalTables(sourceTables.size());
+			dataSource.setSize(getSizeText(dbSize));
+			dataSource.setSourceTables(sourceTables);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	private Double getSize(Double dataLength, Double indexLength) {
 		return (dataLength + indexLength) / 1024 / 1024;
 	}
@@ -156,5 +192,4 @@ public class MetaDataService {
 		PreparedStatement statement = connection.prepareStatement(sql);
 		return statement.executeQuery();
 	}
-
 }
