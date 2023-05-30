@@ -57,19 +57,28 @@ public class MetaDataService {
 			e.printStackTrace();
 		}
 	}
-	private void retrieveDataFromPostgreSQL(DataSource dataSource) {
-		try {
-			Class.forName("org.postgresql.Driver");
-			ConnectionInfo connectionInfo = dataSource.getConnectionInfo();
-			Connection connection = DriverManager.getConnection(connectionInfo.getConnectionURL(),
-					connectionInfo.getUsername(), connectionInfo.getPassword());
-			dataSource.setStatus("Active");
-			getTableMetadata(connection, dataSource);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	
+	@Transactional
+	public void getMetadata1() {
+	    List<DataSource> dataSources = dataSourceRepository.findAll();
+	    for (DataSource dataSource : dataSources) {
+	        retrieveDataFromPostgreSQL(dataSource);
+	    }
+	    dataSourceRepository.saveAll(dataSources);
 	}
 
+	private void retrieveDataFromPostgreSQL(DataSource dataSource) {
+	    try {
+	        Class.forName("org.postgresql.Driver");
+	        ConnectionInfo connectionInfo = dataSource.getConnectionInfo();
+	        Connection connection = DriverManager.getConnection(connectionInfo.getConnectionURL(),
+	                connectionInfo.getUsername(), connectionInfo.getPassword());
+	        dataSource.setStatus("Active");
+	        getTableMetadata(connection, dataSource);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
 
 	private void getTableMetadata(Connection connection, DataSource dataSource) throws SQLException {
 		int totalTables = 0;
