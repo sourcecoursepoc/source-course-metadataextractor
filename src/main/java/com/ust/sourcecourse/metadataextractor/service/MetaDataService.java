@@ -1,5 +1,6 @@
 package com.ust.sourcecourse.metadataextractor.service;
-
+import org.json.JSONArray;
+import org.json.JSONObject;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -156,6 +157,8 @@ public class MetaDataService {
 	        }
 
 	        double dbSize = 0.0;
+	        JSONArray sourceTablesArray = new JSONArray();
+	        
 	        while (tableRS.next()) {
 	            String currentTableName = tableRS.getString("TABLE_NAME");
 
@@ -173,11 +176,27 @@ public class MetaDataService {
 	            SourceTable selectedSourceTable = getSourceTable(dataSource, sourceTables, currentTableName,
 	                    sourceTableOptional, rowCount, tblSizeInMB);
 	            getColumnMetadata(connection, dataSource, selectedSourceTable);
+
+	            JSONObject sourceTableObject = new JSONObject();
+	            sourceTableObject.put("name", selectedSourceTable.getName());
+	            sourceTableObject.put("rowCount", selectedSourceTable.getRowCount());
+	            sourceTableObject.put("size", selectedSourceTable.getSize());
+	            
+	            sourceTablesArray.put(sourceTableObject);
 	        }
 
 	        dataSource.setTotalTables(sourceTables.size());
 	        dataSource.setSize(getSizeText(dbSize));
 	        dataSource.setSourceTables(sourceTables);
+
+	        JSONObject resultObject = new JSONObject();
+	        resultObject.put("dataSource", dataSource);
+	        resultObject.put("sourceTables", sourceTablesArray);
+
+	        String jsonResult = resultObject.toString();
+	        System.out.println(jsonResult); 
+	        
+
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	    }
