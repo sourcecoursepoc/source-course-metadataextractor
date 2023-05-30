@@ -142,42 +142,45 @@ public class MetaDataService {
 		}
 		sourceTable.setSourceColumns(sourceColumns);
 	}
+	
 
-	public void getSelectedRows(DataSource dataSource, SourceTable sourceTable) {
-		String sql = "SELECT * FROM " + sourceTable.getName() + " LIMIT 10";
-		try {
-			ConnectionInfo connectionInfo = dataSource.getConnectionInfo();
-			Connection connection = DriverManager.getConnection(connectionInfo.getConnectionURL(),
-					connectionInfo.getUsername(), connectionInfo.getPassword());
-			ResultSet tableRS = getResultSet(connection, sql);
-			List<SourceTable> sourceTables = dataSource.getSourceTables();
-			if (sourceTables == null) {
-				sourceTables = new ArrayList<>();
-			}
+	public void getSelectedRows(Connection connection, DataSource dataSource, SourceTable sourceTable) {
+	    String tableName = sourceTable.getName();
+	    String sql = "SELECT * FROM " + tableName + " LIMIT 10";
 
-			Double dbSize = 0D;
-			while (tableRS.next()) {
-				String tableName = tableRS.getString("TABLE_NAME");
+	    try {
+	        ResultSet tableRS = getResultSet(connection, sql);
+	        List<SourceTable> sourceTables = dataSource.getSourceTables();
+	        if (sourceTables == null) {
+	            sourceTables = new ArrayList<>();
+	        }
 
-				Optional<SourceTable> sourceTble = sourceTables.stream()
-						.filter(st -> st.getName().equalsIgnoreCase(tableName)).findFirst();
+	        double dbSize = 0.0;
+	        while (tableRS.next()) {
+	            String currentTableName = tableRS.getString("TABLE_NAME");
 
-				Long rowCount = tableRS.getLong("TABLE_ROWS");
-				Double dataLength = tableRS.getDouble("DATA_LENGTH");
-				Double indexLength = tableRS.getDouble("INDEX_LENGTH");
-				Double tblSize = getSize(dataLength, indexLength);
-				String tbleSizeInMB = getSizeText(tblSize);
-				dbSize += tblSize;
-				SourceTable selectedSourceTable = getSourceTable(dataSource, sourceTables, tableName, sourceTble,
-						rowCount, tbleSizeInMB);
-				getColumnMetadata(connection, dataSource, selectedSourceTable);
-			}
-			dataSource.setTotalTables(sourceTables.size());
-			dataSource.setSize(getSizeText(dbSize));
-			dataSource.setSourceTables(sourceTables);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	            Optional<SourceTable> sourceTableOptional = sourceTables.stream()
+	                    .filter(st -> st.getName().equalsIgnoreCase(currentTableName))
+	                    .findFirst();
+
+	            long rowCount = tableRS.getLong("TABLE_ROWS");
+	            double dataLength = tableRS.getDouble("DATA_LENGTH");
+	            double indexLength = tableRS.getDouble("INDEX_LENGTH");
+	            double tblSize = getSize(dataLength, indexLength);
+	            String tblSizeInMB = getSizeText(tblSize);
+	            dbSize += tblSize;
+
+	            SourceTable selectedSourceTable = getSourceTable(dataSource, sourceTables, currentTableName,
+	                    sourceTableOptional, rowCount, tblSizeInMB);
+	            getColumnMetadata(connection, dataSource, selectedSourceTable);
+	        }
+
+	        dataSource.setTotalTables(sourceTables.size());
+	        dataSource.setSize(getSizeText(dbSize));
+	        dataSource.setSourceTables(sourceTables);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	private Double getSize(Double dataLength, Double indexLength) {

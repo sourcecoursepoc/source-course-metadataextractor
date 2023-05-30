@@ -1,10 +1,12 @@
 package com.ust.sourcecourse.metadataextractor.entity;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.jooq.Row;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 
@@ -75,5 +77,15 @@ public class DataSource {
 
 	@OneToMany(mappedBy = "dataSource", cascade = CascadeType.ALL)
 	private List<SourceTable> sourceTables;
+
+	public Connection getConnection() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public List<Row> getSelectedRows(SourceTable sourceTable) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
