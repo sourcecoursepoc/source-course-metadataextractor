@@ -13,6 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ust.sourcecourse.metadataextractor.entity.ConnectionInfo;
 import com.ust.sourcecourse.metadataextractor.entity.DataSource;
 import com.ust.sourcecourse.metadataextractor.entity.SourceColumn;
@@ -24,17 +27,16 @@ public class MetaDataService {
 
 	@Autowired
 	private DataSourceRepository dataSourceRepository;
-	
+
+	@Autowired
+	private ObjectMapper objectMapper;
+
 	@Transactional
 	public void getMetadata(Long uid) {
-		Optional<DataSource> dataSource=dataSourceRepository.findById(uid);
-		
-		DataSource dataSource2 = dataSource.get();
-		connectToDBAndGetData(dataSource2);
-		dataSourceRepository.save(dataSource2);
-		
+		DataSource dataSource = dataSourceRepository.findById(uid).orElseThrow();
+		connectToDBAndGetData(dataSource);
+		dataSourceRepository.save(dataSource);
 	}
-	
 
 	@Transactional
 	public void getMetadata() {
@@ -53,6 +55,7 @@ public class MetaDataService {
 					connectionInfo.getUsername(), connectionInfo.getPassword());
 			dataSource.setStatus("Active");
 			getTableMetadata(connection, dataSource);
+			connection.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -85,6 +88,7 @@ public class MetaDataService {
 			SourceTable sourceTable = getSourceTable(dataSource, sourceTables, tableName, sourceTble, rowCount,
 					tbleSizeInMB);
 			getColumnMetadata(connection, dataSource, sourceTable);
+			getSampleData(connection, dataSource, sourceTable);
 		}
 		dataSource.setTotalTables(totalTables);
 		dataSource.setSize(getSizeText(dbSize));
@@ -110,7 +114,7 @@ public class MetaDataService {
 	private void getColumnMetadata(Connection connection, DataSource dataSource, SourceTable sourceTable)
 			throws SQLException {
 		String sql = "SELECT * FROM information_schema.COLUMNS where TABLE_SCHEMA = '" + dataSource.getName()
-				+ "' AND TABLE_NAME = '" + sourceTable.getName() + "'";
+				+ "' AND TABLE_NAME = '" + sourceTable.getName() + "' ORDER BY ORDINAL_POSITION";
 		ResultSet columnRS = getResultSet(connection, sql);
 		List<SourceColumn> sourceColumns = sourceTable.getSourceColumns();
 		if (sourceColumns == null) {
@@ -118,7 +122,6 @@ public class MetaDataService {
 		}
 		while (columnRS.next()) {
 			String colName = columnRS.getString("COLUMN_NAME");
-
 			String type = columnRS.getString("COLUMN_TYPE");
 			String dfltValue = columnRS.getString("COLUMN_DEFAULT");
 			boolean isNullable = columnRS.getBoolean("IS_NULLABLE");
@@ -155,6 +158,30 @@ public class MetaDataService {
 			}
 		}
 		sourceTable.setSourceColumns(sourceColumns);
+	}
+
+	private void getSampleData(Connection connection, DataSource dataSource, SourceTable sourceTable)
+			throws SQLException {
+		String sql = "SELECT * FROM " + dataSource.getName() + "." + sourceTable.getName() + " LIMIT 10;";
+		ResultSet resultSet = getResultSet(connection, sql);
+		List<SourceColumn> sourceColumns = sourceTable.getSourceColumns();
+		ArrayNode arrayNode = objectMapper.createArrayNode();
+		while (resultSet.next()) {
+			ObjectNode objectNode = objectMapper.createObjectNode();
+			sourceColumns.forEach(sourceColumn -> {
+				String name = sourceColumn.getName();
+				String value = null;
+				try {
+					value = resultSet.getString(name);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				objectNode.put(name, value);
+			});
+			arrayNode.add(objectNode);
+		}
+		String json = arrayNode.toString();
+		sourceTable.setSampleData(json);
 	}
 
 	private Double getSize(Double dataLength, Double indexLength) {
