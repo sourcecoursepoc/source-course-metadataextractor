@@ -24,17 +24,16 @@ public class MetaDataService {
 
 	@Autowired
 	private DataSourceRepository dataSourceRepository;
-	
+
 	@Transactional
 	public void getMetadata(Long uid) {
-		Optional<DataSource> dataSource=dataSourceRepository.findById(uid);
-		
+		Optional<DataSource> dataSource = dataSourceRepository.findById(uid);
+
 		DataSource dataSource2 = dataSource.get();
 		connectToDBAndGetData(dataSource2);
 		dataSourceRepository.save(dataSource2);
-		
+
 	}
-	
 
 	@Transactional
 	public void getMetadata() {
@@ -45,39 +44,49 @@ public class MetaDataService {
 		dataSourceRepository.saveAll(dataSources);
 	}
 
-	private void connectToDBAndGetData(DataSource dataSource) {
-		try {
+	public interface DatabaseConnection {
+		void connect(ConnectionInfo connectionInfo, DataSource dataSource) throws Exception;
+	}
+
+	public class MySQLConnection implements DatabaseConnection {
+		@Override
+		public void connect(ConnectionInfo connectionInfo, DataSource dataSource) throws Exception {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			ConnectionInfo connectionInfo = dataSource.getConnectionInfo();
 			Connection connection = DriverManager.getConnection(connectionInfo.getConnectionURL(),
 					connectionInfo.getUsername(), connectionInfo.getPassword());
-			dataSource.setStatus("Active");
 			getTableMetadata(connection, dataSource);
+		}
+	}
+
+	public class PostgreSQLConnection implements DatabaseConnection {
+		@Override
+		public void connect(ConnectionInfo connectionInfo, DataSource dataSource) throws Exception {
+			Class.forName("org.postgresql.Driver");
+			Connection connection = DriverManager.getConnection(connectionInfo.getConnectionURL(),
+					connectionInfo.getUsername(), connectionInfo.getPassword());
+			getTableMetadata(connection, dataSource);
+		}
+	}
+
+	public void connectToDBAndGetData(DataSource dataSource) {
+		try {
+			ConnectionInfo connectionInfo = dataSource.getConnectionInfo();
+			String connectionURL = connectionInfo.getConnectionURL();
+
+			DatabaseConnection dbConnection;
+			if (connectionURL.contains("mysql")) {
+				dbConnection = new MySQLConnection();
+			} else if (connectionURL.contains("postgresql")) {
+				dbConnection = new PostgreSQLConnection();
+			} else {
+				throw new IllegalArgumentException("Unsupported database type");
+			}
+
+			dbConnection.connect(connectionInfo, dataSource);
+			dataSource.setStatus("Active");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-	
-	@Transactional
-	public void getMetadata1() {
-	    List<DataSource> dataSources = dataSourceRepository.findAll();
-	    for (DataSource dataSource : dataSources) {
-	        retrieveDataFromPostgreSQL(dataSource);
-	    }
-	    dataSourceRepository.saveAll(dataSources);
-	}
-
-	private void retrieveDataFromPostgreSQL(DataSource dataSource) {
-	    try {
-	        Class.forName("org.postgresql.Driver");
-	        ConnectionInfo connectionInfo = dataSource.getConnectionInfo();
-	        Connection connection = DriverManager.getConnection(connectionInfo.getConnectionURL(),
-	                connectionInfo.getUsername(), connectionInfo.getPassword());
-	        dataSource.setStatus("Active");
-	        getTableMetadata(connection, dataSource);
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
 	}
 
 	private void getTableMetadata(Connection connection, DataSource dataSource) throws SQLException {
@@ -191,6 +200,5 @@ public class MetaDataService {
 		PreparedStatement statement = connection.prepareStatement(sql);
 		return statement.executeQuery();
 	}
-	
 
 }
