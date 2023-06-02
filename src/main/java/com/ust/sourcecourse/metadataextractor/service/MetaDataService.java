@@ -7,20 +7,35 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
+import org.bson.BsonDocument;
+import org.bson.BsonInt64;
+import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.mongodb.client.ClientSession;
+import com.mongodb.client.ListCollectionsIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
+import com.ust.sourcecourse.metadataextractor.constant.AppConstant;
 import com.ust.sourcecourse.metadataextractor.entity.ConnectionInfo;
 import com.ust.sourcecourse.metadataextractor.entity.DataSource;
 import com.ust.sourcecourse.metadataextractor.entity.SourceColumn;
 import com.ust.sourcecourse.metadataextractor.entity.SourceTable;
 import com.ust.sourcecourse.metadataextractor.repository.DataSourceRepository;
+import com.ust.sourcecourse.metadataextractor.util.DBUtil;
 
 @Service
 public class MetaDataService {
@@ -31,31 +46,168 @@ public class MetaDataService {
 	@Autowired
 	private ObjectMapper objectMapper;
 
-	@Transactional
+//	@Transactional
 	public void getMetadata(Long uid) {
-		DataSource dataSource = dataSourceRepository.findById(uid).orElseThrow();
-		connectToDBAndGetData(dataSource);
-		dataSourceRepository.save(dataSource);
+//		DataSource dataSource = dataSourceRepository.findById(uid).orElseThrow();
+//		connectToDBAndGetData(dataSource);
+//		dataSourceRepository.save(dataSource);
 	}
 
-	@Transactional
+//	@Transactional
 	public void getMetadata() {
 		List<DataSource> dataSources = dataSourceRepository.findAll();
 		for (DataSource dataSource : dataSources) {
 			connectToDBAndGetData(dataSource);
 		}
-		dataSourceRepository.saveAll(dataSources);
+//		dataSourceRepository.saveAll(dataSources);
 	}
 
 	private void connectToDBAndGetData(DataSource dataSource) {
 		try {
-			Class.forName("com.mysql.cj.jdbc.Driver");
+
 			ConnectionInfo connectionInfo = dataSource.getConnectionInfo();
-			Connection connection = DriverManager.getConnection(connectionInfo.getConnectionURL(),
-					connectionInfo.getUsername(), connectionInfo.getPassword());
-			dataSource.setStatus("Active");
-			getTableMetadata(connection, dataSource);
-			connection.close();
+			String connectionURL = connectionInfo.getConnectionURL();
+			String dbType = DBUtil.getDBType(connectionURL);
+
+			switch (dbType) {
+			case AppConstant.DB_MYSQL:
+			case AppConstant.DB_POSTGRES:
+				connectUsingDriver(dataSource, connectionInfo, dbType);
+				break;
+			case AppConstant.DB_MONGODB:
+				connectToMongoDB(dataSource, connectionInfo, dbType);
+				break;
+			default:
+				break;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void connectToMongoDB(DataSource dataSource, ConnectionInfo connectionInfo, String dbType) {
+		String connectionURL = connectionInfo.getConnectionURL();
+		try (MongoClient mongoClient = MongoClients.create(connectionURL);
+				ClientSession clientSession = mongoClient.startSession();) {
+//			List<Document> databases = mongoClient.listDatabases().into(new ArrayList<>());
+//			databases.forEach(db -> {
+//				System.out.println(db.toJson());
+//			});
+//        }
+
+//			MongoIterable<String> listDatabaseNames = mongoClient.listDatabaseNames();
+//			MongoCursor<String> mongoCursor = listDatabaseNames.iterator();
+//			while(mongoCursor.hasNext()) {
+//				String next = mongoCursor.next();
+//				System.out.println("Next => " + next);
+//			}
+
+			MongoDatabase database = mongoClient.getDatabase(dataSource.getName());
+
+			ListCollectionsIterable<Document> listCollections = database.listCollections();
+			MongoCursor<Document> iterator = listCollections.iterator();
+			List<Document> documents = new ArrayList<>();
+			while (iterator.hasNext()) {
+				Document document = iterator.next();
+				documents.add(document);
+				String collectionName = document.getString("name");
+				MongoCollection<Document> mongoCollection = database.getCollection(collectionName);
+				long rows = mongoCollection.countDocuments();
+				System.out.println("collectionName = " + collectionName + " , Rows = " + rows);
+				Document first = mongoCollection.find().first();
+//				System.out.println("first = " + first);
+//				System.out.println("first JSON = " + first.toJson());
+				Set<Entry<String, Object>> entrySet = first.entrySet();
+				List<String> columns = new ArrayList<>();
+				entrySet.forEach(entry -> {
+					Object value = entry.getValue();
+					String typeString = value == null ? "null" : value.getClass().toString();
+//					System.out.println("Key = " + entry.getKey() + " : " + value + " , typeString = " + typeString);
+					columns.add(entry.getKey());
+				});
+			}
+			
+			Bson command = new BsonDocument("dbStats", new BsonInt64(1));
+            Document commandResult = database.runCommand(command);
+            System.out.println("dbStats: " + commandResult.toJson());
+            
+//            command = new BsonDocument("collStats", new BsonInt64(1));
+//            commandResult = database.runCommand(command);
+//            System.out.println("collStats: " + commandResult.toJson());
+            
+            Document stats = database.runCommand(new Document("collStats", "cutstomers"));
+            System.out.println(stats.get("count"));
+            System.out.println(stats.get("avgObjSize"));
+            System.out.println(stats.get("storageSize"));
+
+		}
+
+//		ConnectionString uri = new ConnectionString(connectionURL);
+//		try(MongoConnection mongoConnection = new MongoConnection(
+//				new MongoConnectionProperties(uri, dataSource.getName(), null, null, null, false));) {
+//			DatabaseMetaData databaseMetaData = new MongoDatabaseMetaData(mongoConnection);
+//			
+//			PreparedStatement prepareStatement = mongoConnection.prepareStatement("db.getCollection(categories).dataSize()");
+//			ResultSet resultSet = prepareStatement.executeQuery();
+//			ResultSetMetaData metaData = resultSet.getMetaData();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+		
+//		try {
+//			ConnectionString uri = new ConnectionString(connectionURL);
+//			DatabaseMetaData databaseMetaData = new MongoDatabaseMetaData(new MongoConnection(
+//					new MongoConnectionProperties(uri, dataSource.getName(), null, null, null, false)));
+//			ResultSet resultSet = databaseMetaData.getSchemas();
+//
+//			ResultSetMetaData metaData = resultSet.getMetaData();
+//			int columnCount = metaData.getColumnCount();
+//			List<String> cols = new ArrayList<>();
+//			for (int i = 1; i <= columnCount; i++) {
+//				String columnName = metaData.getColumnName(i);
+//				System.out.println("Col => " + columnName);
+//				cols.add(columnName);
+//			}
+//			
+//			while(resultSet.next()) {
+//				cols.forEach(colNme -> {
+//					String value = null;
+//					try {
+//						value = resultSet.getString(colNme);
+//					} catch (SQLException e) {
+//						e.printStackTrace();
+//					}
+//					System.out.println("Col = " + colNme + " , value => " + value);
+//				});
+//			}
+//			
+//			resultSet.last();
+//			int count = resultSet.getRow();
+//			System.out.println("count => " + count);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+
+	}
+
+	private void connectUsingDriver(DataSource dataSource, ConnectionInfo connectionInfo, String dbType) {
+		try {
+			String driver = DBUtil.getConnectionDriver(dbType);
+			Class.forName(driver);
+			String username = connectionInfo.getUsername();
+			String password = connectionInfo.getPassword();
+			String connectionURL = connectionInfo.getConnectionURL();
+			Connection connection = null;
+			if (StringUtils.isAnyBlank(username, password)) {
+				connection = DriverManager.getConnection(connectionURL);
+			} else {
+				connection = DriverManager.getConnection(connectionURL, username, password);
+			}
+			if (connection != null) {
+				dataSource.setStatus("Active");
+				getTableMetadata(connection, dataSource);
+				connection.close();
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -75,7 +227,7 @@ public class MetaDataService {
 		while (tableRS.next()) {
 			totalTables += 1;
 			String tableName = tableRS.getString("TABLE_NAME");
-
+			System.out.println("tableName = " + tableName);
 			Optional<SourceTable> sourceTble = sourceTables.stream()
 					.filter(st -> st.getName().equalsIgnoreCase(tableName)).findFirst();
 
