@@ -26,6 +26,18 @@ import com.ust.sourcecourse.metadataextractor.util.DBUtil;
 @Service
 public class MetaDataService {
 
+	private static final String RELATION_SIZE = "RELATION_SIZE";
+	private static final String TABLE_SCHEM = "TABLE_SCHEM";
+	private static final String INDEX_LENGTH = "INDEX_LENGTH";
+	private static final String DATA_LENGTH = "DATA_LENGTH";
+	private static final String TABLE = "TABLE";
+	private static final String TABLE_NAME = "TABLE_NAME";
+	private static final String YES = "YES";
+	private static final String COLUMN_DEF = "COLUMN_DEF";
+	private static final String IS_NULLABLE = "IS_NULLABLE";
+	private static final String TYPE_NAME = "TYPE_NAME";
+	private static final String COLUMN_NAME = "COLUMN_NAME";
+
 	@Autowired
 	private DataSourceRepository dataSourceRepository;
 
@@ -63,118 +75,144 @@ public class MetaDataService {
 					sourceTables = new ArrayList<>();
 				}
 				Double dbSize = 0D;
-				int totalTables = 0;
-
-				try (ResultSet tableRS = metaData.getTables(dbName, null, null, new String[] { "TABLE" })) {
-
-					while (tableRS.next()) {
-						totalTables += 1;
-						String tableName = tableRS.getString("TABLE_NAME");
-
-						Optional<SourceTable> sourceTble = sourceTables.stream()
-								.filter(st -> st.getName().equalsIgnoreCase(tableName)).findFirst();
-						Double tblSize = null;
-						if (dbType.equals(DBType.DB_MYSQL)) {
-							String sql = "SELECT * FROM information_schema.TABLES where UPPER("
-									+ dbType.getSchemaTableColumn() + ") = UPPER('" + dbName + "') AND"
-									+ " UPPER(TABLE_NAME) = UPPER('" + tableName + "');";
-							ResultSet sizeRS = DBUtil.getResultSet(connection, sql);
-							while (sizeRS.next()) {
-								Double dataLength = sizeRS.getDouble("DATA_LENGTH");
-								Double indexLength = sizeRS.getDouble("INDEX_LENGTH");
-								tblSize = DBUtil.getSize(dataLength, indexLength);
-							}
-						} else if (dbType.equals(DBType.DB_POSTGRES)) {
-							String schema = tableRS.getString("TABLE_SCHEM");
-							String sqlSize = """
-									SELECT
-									  table_name AS TABLE_NAME,
-									  pg_size_pretty(pg_relation_size(quote_ident(table_name))) AS SIZE_PRETTY,
-									  pg_relation_size(quote_ident(table_name)) AS RELATION_SIZE
-									from information_schema.TABLES
-									where UPPER(TABLE_CATALOG) = '""" + dbName + """
-									' AND table_schema = '""" + schema + """
-									' AND UPPER(TABLE_NAME) = UPPER('""" + tableName + """
-									');
-									""";
-							ResultSet sizeRS = DBUtil.getResultSet(connection, sqlSize);
-							while (sizeRS.next()) {
-								tblSize = DBUtil.bytesToMB(sizeRS.getDouble("RELATION_SIZE"));
-							}
-						}
-						String tableSize = null;
-						if (tblSize != null) {
-							dbSize += tblSize;
-							tableSize = DBUtil.getSizeText(tblSize);
-						}
-						String countQuery = DBUtil.getCountQuery(dbType, dbName, tableName);
-						ResultSet rowsRS = DBUtil.getResultSet(connection, countQuery);
-						Long rowCount = 0L;
-						while (rowsRS.next()) {
-							rowCount = Long.valueOf(rowsRS.getInt("ROW_COUNT"));
-						}
-						SourceTable sourceTable = getSourceTable(dataSource, sourceTables, tableName, sourceTble,
-								rowCount, tableSize);
-
-						try (ResultSet columnRS = metaData.getColumns(dbName, null, tableName, null)) {
-
-							List<String> primaryKeys = new ArrayList<>();
-							ResultSet primaryKeysRS = metaData.getPrimaryKeys(dbName, null, tableName);
-							while (primaryKeysRS.next()) {
-								String key = primaryKeysRS.getString("COLUMN_NAME");
-								primaryKeys.add(key);
-							}
-							List<String> uniqueKeys = new ArrayList<>();
-							ResultSet uniqueRS = metaData.getIndexInfo(dbName, null, tableName, true, true);
-							while (uniqueRS.next()) {
-								String key = uniqueRS.getString("COLUMN_NAME");
-								uniqueKeys.add(key);
-							}
-							List<SourceColumn> sourceColumns = sourceTable.getSourceColumns();
-							if (sourceColumns == null) {
-								sourceColumns = new ArrayList<>();
-							}
-
-							while (columnRS.next()) {
-								String columnName = columnRS.getString("COLUMN_NAME");
-								String typeName = columnRS.getString("TYPE_NAME");
-								String nullable = columnRS.getString("IS_NULLABLE");
-								String defValue = columnRS.getString("COLUMN_DEF");
-								boolean isPrimary = primaryKeys.contains(columnName);
-								boolean isUnique = uniqueKeys.contains(columnName);
-								boolean isNullable = nullable != null && nullable.equalsIgnoreCase("YES");
-								Optional<SourceColumn> sourceClmn = sourceColumns.stream()
-										.filter(sc -> sc.getName().equalsIgnoreCase(columnName)).findFirst();
-								SourceColumn sourceColumn = null;
-								if (sourceClmn.isPresent()) {
-									sourceColumn = sourceClmn.get();
-									sourceColumn.setName(columnName);
-									sourceColumn.setType(typeName);
-									sourceColumn.setDefaultValue(defValue);
-									sourceColumn.setNullable(isNullable);
-									sourceColumn.setPrimary(isPrimary);
-									sourceColumn.setUnique(isUnique);
-								} else {
-									sourceColumn = SourceColumn.builder().sourceTable(sourceTable).name(columnName)
-											.type(typeName).defaultValue(defValue).isNullable(isNullable)
-											.isPrimary(isPrimary).isUnique(isUnique).build();
-									sourceColumns.add(sourceColumn);
-								}
-							}
-							columnRS.close();
-							sourceTable.setSourceColumns(sourceColumns);
-						}
-						collectSampleData(dbType, connection, dataSource, sourceTable);
-					}
-					tableRS.close();
-				}
-				dataSource.setTotalTables(totalTables);
+				dbSize = extractTableMetadata(dataSource, dbType, dbName, connection, metaData, sourceTables, dbSize);
+				dataSource.setTotalTables(sourceTables.size());
 				dataSource.setSize(DBUtil.getSizeText(dbSize));
 				dataSource.setSourceTables(sourceTables);
 				connection.close();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+
+	private Double extractTableMetadata(DataSource dataSource, DBType dbType, String dbName, Connection connection,
+			DatabaseMetaData metaData, List<SourceTable> sourceTables, Double dbSize) throws SQLException {
+		try (ResultSet tableRS = metaData.getTables(dbName, null, null, new String[] { TABLE })) {
+			while (tableRS.next()) {
+				String tableName = tableRS.getString(TABLE_NAME);
+				Optional<SourceTable> sourceTble = sourceTables.stream()
+						.filter(st -> st.getName().equalsIgnoreCase(tableName)).findFirst();
+				Double tblSize = getTableSize(dbType, dbName, connection, tableRS, tableName);
+				String tableSize = null;
+				if (tblSize != null) {
+					dbSize += tblSize;
+					tableSize = DBUtil.getSizeText(tblSize);
+				}
+				String countQuery = DBUtil.getCountQuery(dbType, dbName, tableName);
+				ResultSet rowsRS = DBUtil.getResultSet(connection, countQuery);
+				Long rowCount = 0L;
+				while (rowsRS.next()) {
+					rowCount = Long.valueOf(rowsRS.getInt("ROW_COUNT"));
+				}
+				SourceTable sourceTable = getSourceTable(dataSource, sourceTables, tableName, sourceTble, rowCount,
+						tableSize);
+				extractColumnMetaData(dbName, metaData, tableName, sourceTable);
+				collectSampleData(dbType, connection, dataSource, sourceTable);
+			}
+			tableRS.close();
+		}
+		return dbSize;
+	}
+
+	private Double getTableSize(DBType dbType, String dbName, Connection connection, ResultSet tableRS,
+			String tableName) throws SQLException {
+		Double tblSize = null;
+		if (dbType.equals(DBType.DB_MYSQL)) {
+			String sql = "SELECT * FROM information_schema.TABLES where UPPER(" + dbType.getSchemaTableColumn()
+					+ ") = UPPER('" + dbName + "') AND" + " UPPER(TABLE_NAME) = UPPER('" + tableName + "');";
+			ResultSet sizeRS = DBUtil.getResultSet(connection, sql);
+			while (sizeRS.next()) {
+				Double dataLength = sizeRS.getDouble(DATA_LENGTH);
+				Double indexLength = sizeRS.getDouble(INDEX_LENGTH);
+				tblSize = DBUtil.getSize(dataLength, indexLength);
+			}
+		} else if (dbType.equals(DBType.DB_POSTGRES)) {
+			String schema = tableRS.getString(TABLE_SCHEM);
+			String sqlSize = """
+					SELECT
+					  table_name AS TABLE_NAME,
+					  pg_size_pretty(pg_relation_size(quote_ident(table_name))) AS SIZE_PRETTY,
+					  pg_relation_size(quote_ident(table_name)) AS RELATION_SIZE
+					from information_schema.TABLES
+					where UPPER(TABLE_CATALOG) = '""" + dbName + """
+					' AND table_schema = '""" + schema + """
+					' AND UPPER(TABLE_NAME) = UPPER('""" + tableName + """
+					');
+					""";
+			ResultSet sizeRS = DBUtil.getResultSet(connection, sqlSize);
+			while (sizeRS.next()) {
+				tblSize = DBUtil.bytesToMB(sizeRS.getDouble(RELATION_SIZE));
+			}
+		}
+		return tblSize;
+	}
+
+	private void extractColumnMetaData(String dbName, DatabaseMetaData metaData, String tableName,
+			SourceTable sourceTable) throws SQLException {
+		try (ResultSet columnRS = metaData.getColumns(dbName, null, tableName, null)) {
+
+			List<String> primaryKeys = getPrimaryKeysOfTable(dbName, metaData, tableName);
+			List<String> uniqueKeys = getUniqueKeyOfTable(dbName, metaData, tableName);
+			List<SourceColumn> sourceColumns = sourceTable.getSourceColumns();
+			if (sourceColumns == null) {
+				sourceColumns = new ArrayList<>();
+			}
+
+			getColumnMetadata(sourceTable, columnRS, primaryKeys, uniqueKeys, sourceColumns);
+			columnRS.close();
+			sourceTable.setSourceColumns(sourceColumns);
+		}
+	}
+
+	private List<String> getUniqueKeyOfTable(String dbName, DatabaseMetaData metaData, String tableName)
+			throws SQLException {
+		List<String> uniqueKeys = new ArrayList<>();
+		ResultSet uniqueRS = metaData.getIndexInfo(dbName, null, tableName, true, true);
+		while (uniqueRS.next()) {
+			String key = uniqueRS.getString(COLUMN_NAME);
+			uniqueKeys.add(key);
+		}
+		return uniqueKeys;
+	}
+
+	private List<String> getPrimaryKeysOfTable(String dbName, DatabaseMetaData metaData, String tableName)
+			throws SQLException {
+		List<String> primaryKeys = new ArrayList<>();
+		ResultSet primaryKeysRS = metaData.getPrimaryKeys(dbName, null, tableName);
+		while (primaryKeysRS.next()) {
+			String key = primaryKeysRS.getString(COLUMN_NAME);
+			primaryKeys.add(key);
+		}
+		return primaryKeys;
+	}
+
+	private void getColumnMetadata(SourceTable sourceTable, ResultSet columnRS, List<String> primaryKeys,
+			List<String> uniqueKeys, List<SourceColumn> sourceColumns) throws SQLException {
+		while (columnRS.next()) {
+			String columnName = columnRS.getString(COLUMN_NAME);
+			String typeName = columnRS.getString(TYPE_NAME);
+			String nullable = columnRS.getString(IS_NULLABLE);
+			String defValue = columnRS.getString(COLUMN_DEF);
+			boolean isPrimary = primaryKeys.contains(columnName);
+			boolean isUnique = uniqueKeys.contains(columnName);
+			boolean isNullable = nullable != null && nullable.equalsIgnoreCase(YES);
+			Optional<SourceColumn> sourceClmn = sourceColumns.stream()
+					.filter(sc -> sc.getName().equalsIgnoreCase(columnName)).findFirst();
+			SourceColumn sourceColumn = null;
+			if (sourceClmn.isPresent()) {
+				sourceColumn = sourceClmn.get();
+				sourceColumn.setName(columnName);
+				sourceColumn.setType(typeName);
+				sourceColumn.setDefaultValue(defValue);
+				sourceColumn.setNullable(isNullable);
+				sourceColumn.setPrimary(isPrimary);
+				sourceColumn.setUnique(isUnique);
+			} else {
+				sourceColumn = SourceColumn.builder().sourceTable(sourceTable).name(columnName).type(typeName)
+						.defaultValue(defValue).isNullable(isNullable).isPrimary(isPrimary).isUnique(isUnique).build();
+				sourceColumns.add(sourceColumn);
+			}
 		}
 	}
 
